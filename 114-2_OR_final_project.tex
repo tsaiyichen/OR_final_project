@@ -127,11 +127,6 @@ y_{ijk} &\in \{0,1\} \quad \forall i \in I, j \in K, k \in K
 which are the binary constraints of the decision variables.
 
 \section{Expected results}
-
-To approach our problem, we will first collect relevant data provided by the IEDO company, including information on orders, cars, and stations. For data that are not available from the IEDO company, we will randomly generate them according to the estimated distribution of the real-world situation faced by the IEDO company. Moreover, we will write a computer program to calculate the values of parameters required for our mathematical program from the raw data.
-
-For small-scale instances, we plan to implement the mixed linear integer programming model by writing a Python program that invokes Gurobi Optimizer to obtain an optimal rearrangement and upgrade plan. For large-scale instances, finding an optimal solution may be too time-consuming and thus not practical; therefore, we seek to develop a heuristic algorithm that can generate near-optimal solutions efficiently.
-
-To demonstrate the effectiveness of our algorithm, we will conduct case studies to compare our solution approach with the current approach adopted by the IEDO company, some very naive heuristics, and some upper bound of an optimal solution. Furthermore, extended experiments will be performed to evaluate the robustness of our algorithm through various scenarios. Finally, we will provide some closing remarks to conclude our study.
+Our proposed model will evaluate pitcher performance using Earned Run Average (ERA), leveraging historical data sourced from leading databases such as Baseball Savant, FanGraphs, and Baseball Reference. The primary objective is to optimize pitcher allocation across a season, subject to the realistic operational constraints detailed in Section 2, in order to maximize a team's expected wins. Given the computational complexity of scheduling for a standard 162-game season, relying solely on exact Integer Programming (IP) will be intractable. Therefore, we aim to implement heuristic algorithms designed to efficiently generate near-optimal schedules. To validate our approach, we will benchmark our heuristic results against exact IP solutions on smaller problem instances. We anticipate achieving a minimal optimality gap and outperforming existing baseline heuristics. Ultimately, we envision this research yielding a robust, computationally efficient framework that translates complex mathematical optimization into highly actionable, real-world strategies for front offices.
 
 \end{document}
