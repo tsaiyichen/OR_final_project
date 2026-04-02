@@ -33,6 +33,48 @@
 
 \maketitle
 
+
+\section*{Problem description}
+
+To strategically assign a roster of $P$ pitchers throughout a full season of $G$ games and maximize the total number of wins, this model assumes that the coaching staff has pre-obtained simulated scoring data ($C_k$) for the team's lineup in each game. The primary objective is to utilize historical performance data (expected runs allowed per slot, $E_{ij}$) and incorporate pitcher protection protocols to determine the optimal assignment for each game.
+
+The total runs allowed in a game are calculated by summing the expected runs from the pitchers assigned to each slot. A game is recorded as a win ($w_k = 1$) if the total runs allowed are less than the runs scored by the lineup; otherwise, it is a loss ($w_k = 0$).
+
+In this model, a standard 9-inning game is divided into four specific time slots: 
+\begin{itemize}
+    \item $j=1$: Starting Pitcher (Innings 1--5).
+    \item $j=2, 3$: Middle Relievers (Innings 6--7).
+    \item $j=4$: Closer (Innings 8--9).
+\end{itemize}
+Each pitcher is restricted to at most one time slot per game. Furthermore, the following pitcher protection constraints are enforced:
+\begin{enumerate}
+    \item \textbf{Starting Pitcher Rest}: A pitcher assigned as a starter ($j=1$) cannot appear in the subsequent four games.
+    \item \textbf{Closer Fatigue}: A pitcher assigned as a closer ($j=4$) cannot pitch in three consecutive days.
+    \item \textbf{Reliever Rest}: Middle relievers ($j=2, 3$) are prohibited from appearing in the immediate next game.
+    \item \textbf{Seasonal Limit}: No pitcher can exceed 25 total starts in a single season.
+\end{enumerate}
+
+\begin{table}[h]
+\centering
+\caption{Mathematical Notations for the Pitcher Scheduling Model}
+\begin{tabular}{ll}
+\hline
+\textbf{Symbol} & \textbf{Description} \\ \hline
+\textit{\textbf{Sets and Indices}} & \\
+$I = \{1, \dots, P\}$ & Set of pitchers, indexed by $i$. \\
+$J = \{1, 2, 3, 4\}$ & Set of roles/slots: 1 (Starter), 2--3 (Relievers), 4 (Closer). \\
+$K = \{1, \dots, G\}$ & Set of games in the season, indexed by $k$. \\ \hline
+\textit{\textbf{Parameters}} & \\
+$G$ & Total number of games (e.g., 162). \\
+$P$ & Total number of pitchers (e.g., 12). \\
+$C_k$ & Expected runs scored by the lineup in game $k$. \\
+$E_{ij}$ & Expected runs allowed by pitcher $i$ in slot $j$. \\
+$M$ & A large positive constant for Big-M logic. \\ \hline
+\textit{\textbf{Decision Variables}} & \\
+$x_{ijk} \in \{0, 1\}$ & 1 if pitcher $i$ is assigned to slot $j$ in game $k$; 0 otherwise. \\
+$w_k \in \{0, 1\}$ & 1 if game $k$ is a win; 0 otherwise. \\ \hline
+\end{tabular}
+\end{table}
 \section{Introduction}
 
 In this project, we collaborate with the IEDO company, which runs a car rental business 24 hours a day, 7 days a week in Taiwan by owning stations and cars of different levels. Customers can visit a station to rent or return a car and seek assistance from customer service representatives. Moreover, for car rental businesses to be welcomed by customers, it is crucial to open sufficient stations so that customers can conveniently access their services.
