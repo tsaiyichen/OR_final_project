@@ -18,7 +18,7 @@
 \title{Operations Research, Spring 2026 (114-2) \\ Final Project Proposal}
 
 \author{
-    \textbf{Group XX} \\[0.4cm] % 填入組別，並在下方增加 0.4cm 的間距
+    \textbf{Group 6} \\[0.4cm] % 填入組別，並在下方增加 0.4cm 的間距
     R14725049 Yi-Chen, Tsai \\[0.4cm]
     R14323011 Pei-Hsuan, Chung \\[0.4cm]
     R13723065 Cheng-Hsien, Li \\[0.4cm]
@@ -33,14 +33,23 @@
 
 \maketitle
 
+\section{Introduction}
 
-\section*{Problem description}
+In the operational framework of professional baseball, particularly in Major League Baseball (MLB) with its grueling 162-game schedule, the allocation and scheduling of pitching resources are undoubtedly the cornerstones of a team's success. Pitchers represent a team's most valuable yet fragile assets, as their physiological limits and injury risks directly dictate performance over a high-intensity regular season. To maintain competitiveness in such a demanding environment, a team must precisely manage appearance frequencies and pitch counts to ensure these scarce resources are deployed at optimal moments. This complex challenge of multi-objective trade-offs and temporal resource distribution represents a core area where Operations Research (OR) provides significant value to sports management.
+
+Typical pitcher scheduling involves highly intricate physiological and institutional constraints requiring differentiated management for various roles: starting pitchers responsible for stabilizing innings, middle relievers bridging the gap mid-game, and relief pitchers (closers) tasked with securing victories. In practice, teams must adhere to strict conventions; for instance, starters typically follow a "start on four days’ rest" or "five days’ rest" rotation to maintain arm health. Conversely, middle and relief pitchers must account for limits on consecutive appearance days and weekly innings to mitigate the risk of overuse injuries. While these conventions provide a basic protective framework, optimizing them within a global scheduling model—especially amidst MLB’s dense schedule and frequent cross-city travel—remains a formidable analytical challenge.
+
+Generally, this decision-making process can be divided into two stages. The first stage involves determining the official roster and player roles based on valuation and talent profiles, while the second stage focuses on crafting a detailed personnel schedule for the specific season itinerary. Although coaching staffs must dynamically adjust their strategies during actual gameplay due to opposing lineups or other uncertainties, many organizations currently lack a scientific baseline tool. Without a long-term strategic anchor, teams often find themselves in a reactive position, making isolated decisions that may compromise the team's health and performance later in the season.
+
+This study aims to assist teams in optimizing the second-stage decision process by establishing an `initial default' pitcher scheduling baseline before the season begins and before in-season variables occur. To simplify the problem and focus on the core logic of the model, this research considers only the internal resource allocation of a single team and assumes that the total runs scored by the team throughout the season are fixed. This allows the model to focus on optimizing pitcher deployment to minimize expected runs allowed and maximize the win rate, all while adhering to strict physiological constraints such as the "start on four days’ rest" rule. This baseline schedule serves not only as a strategic roadmap for the season but also provides a quantitative coordinate for the team to rationally evaluate the long-term impact of tactical adjustments when unexpected system perturbations occur.
+
+\section{Problem description}
 
 To strategically assign a roster of $P$ pitchers throughout a full season of $G$ games and maximize the total number of wins, this model assumes that the coaching staff has pre-obtained simulated scoring data ($C_k$) for the team's lineup in each game. The primary objective is to utilize historical performance data (expected runs allowed per slot, $E_{ij}$) and incorporate pitcher protection protocols to determine the optimal assignment for each game.
 
 The total runs allowed in a game are calculated by summing the expected runs from the pitchers assigned to each slot. A game is recorded as a win ($w_k = 1$) if the total runs allowed are less than the runs scored by the lineup; otherwise, it is a loss ($w_k = 0$).
 
-In this model, a standard 9-inning game is divided into four specific time slots: 
+In this model, a standard 9-inning game is divided into four specific time slots:
 \begin{itemize}
     \item $j=1$: Starting Pitcher (Innings 1--5).
     \item $j=2, 3$: Middle Relievers (Innings 6--7).
@@ -76,60 +85,6 @@ $w_k \in \{0, 1\}$ & 1 if game $k$ is a win; 0 otherwise. \\ \hline
 \end{tabular}
 \end{table}
 
-
-
-
-
-
-
-\section{Introduction}
-
-In this project, we collaborate with the IEDO company, which runs a car rental business 24 hours a day, 7 days a week in Taiwan by owning stations and cars of different levels. Customers can visit a station to rent or return a car and seek assistance from customer service representatives. Moreover, for car rental businesses to be welcomed by customers, it is crucial to open sufficient stations so that customers can conveniently access their services.
-
-Typically, customers book cars via the IEDO company's website before they need the cars. In each order, a customer specifies (1) a car level, (2) the date, time, and station to pick up the car, and (3) the date, time, and station to return the car. The car rental fee, which is also the revenue earned by the IEDO company by fulfilling the order, is also specified. The pick-up station and return station are allowed to be different in an order.
-
-To handle customer orders, the IEDO company divides its decision process into two stages. In the first stage, the IEDO company has to determine whether to accept an order received from its website. The decision is based on a set of empirical rules, such as checking whether the total number of requested cars exceeds those available during a specific period. While these rules are designed by experienced managers, they may sometimes accept too many orders that not all orders are likely to be fulfilled in practice. Because there are many accepted orders, it is possible that cars are not enough at some stations in some periods. Therefore, in the second stage of the decision process, the IEDO company must consider rearranging cars by having its employees move cars among stations or provide free upgrades to fulfill orders.
-
-The IEDO company collects revenue from an order if it is fulfilled. However, if it fails to fulfill an accepted order, resulting in customer dissatisfaction and inconvenience, it will not only fail to earn revenue from the order but also need to compensate the customers. To resolve the above issue, while integrating the two-stage decision process into a single stage (i.e., considering all the decisions simultaneously) may be the best solution, modifying the rules specified in the first stage requires a huge amount of effort to communicate with high-level managers. Therefore, the IEDO company has chosen to prioritize addressing the second-stage problem.
-
-To maximize the total profit as well as to maintain the level of customer satisfaction, it is imperative to generate an effective rearrangement and upgrade plan. If the IEDO company fails to handle the orders effectively, customers may find its service inconvenient and unreliable, and they may decide to patronize other competitors instead. This challenge becomes even more difficult during peak seasons, which requires the IEDO company to manage thousands of orders, hundreds of cars, and tens of stations.
-
-Currently, the rearrangement and upgrade plan is computed by two experienced managers using pencil and paper. However, they have to spend two whole days figuring out a plan for the orders for the upcoming week. Though the plan they generated seems not too bad, the IEDO company has difficulty evaluating the quality of the plan and is interested in whether there are better approaches to address the second-stage problem both efficiently and effectively.
-
-In this project, we try to help the IEDO company figure out the above problem. We assume the first-stage decisions have been made and fixed, and a set of accepted orders is given. Our primary goal is to address the second-stage problem by designing a planning approach to make a rearrangement and upgrade plan according to given conditions to maximize the IEDO company's total profit. Additionally, since we focus on the second-stage problem only, in the sequel, we will refer to "accepted orders" as "orders" when there is no ambiguity.
-
-\section{Problem description}
-
-Given the orders in a certain period, the IEDO company has to find out a rearrangement and upgrade plan to fulfill the orders. The planning horizon expands from 00:00 of the first day to 24:00 of the last day. It is assumed that all cars will be picked up on time, and a car to be rented must be ready at the station thirty minutes earlier than the pick-up time (e.g., if a customer books a car at 10:00 at station 1, the car must be ready at station 1 at 9:30 or earlier)\footnote{By the way, the abbreviation of "for example" in English is "e.g.", not "ex" or "ex:" or whatever.}.
-
-The IEDO company assumes that customers will always return cars on time. Right after a car is returned, the car will be cleaned by the employees at the return station. The cleaning time required depends on the return time of the car. For example, when a car is returned between 08:00 and 12:00 or between 14:00 and 18:00, the cleaning time is one hour. However, there is a lunch break from 12:00 to 14:00, so if a car is returned within this period, it will have to wait and be cleaned after the break. The car will thus finish the cleaning process at 15:00 as the cleaning time is also one hour. Moreover, most employees get off work at 18:00. Due to a staff shortage from 18:00 to 08:00 of the next day, the cleaning process will take three hours when the car is returned within this period. Table \ref{tab:cleaning} summarizes the cleaning time required for different return times.
-
-\begin{table}[h]
-\centering
-\caption{Cleaning time required for different return times}
-\label{tab:cleaning}
-\vspace{0.2cm}
-\begin{tabular}{ll}
-\toprule
-Return time & Cleaning time required \\
-\midrule
-08:00--12:00 & 1 hour \\
-12:00--14:00 & 1 hour after 14:00 \\
-14:00--18:00 & 1 hour \\
-18:00--08:00 & 3 hours \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-After the cleaning process, a car is considered ready. A car may be moved to another station by an IEDO employee only after it is cleaned. It is assumed that all cars are ready and may be picked up by a customer right away at the beginning moment of the planning horizon.
-
-To fulfill orders to earn revenues as much as possible, the IEDO company should allow cars to be moved among stations. As we mentioned above, a car may be moved from a station only after it has been cleaned. The traveling time to move a car from station to station satisfies the triangular inequality. Moreover, it is known that the outbound travel time is the same as the inbound travel time between all pairs of stations. As the IEDO company does not have an unlimited number of employees, the total amount of time spent on moving all cars cannot exceed a predetermined number. Furthermore, it is assumed that as long as the total moving time is within the predetermined upper limit, there is a reasonable way to find enough employees to execute the plan. We also assume that the parking lots at any station are unlimited.
-
-An alternative way to fulfill more orders is to provide upgrades. The IEDO company allows an order asking for a car of a certain level to be satisfied by and only by a car with the same level or the one with only a level higher. Even though upgrades are free, this may still help the IEDO company earn more revenues by fulfilling more low-level orders with spare high-level cars.
-
-While car rearrangements and upgrades may help the IEDO company fulfill more orders, it is still possible that some orders are not being fulfilled. Therefore, the planning process needs to determine three things: (1) which orders to fulfill, (2) whether free upgrades should happen for each order, and (3) when and from where to where to move cars.
-
-If an order is fulfilled, the IEDO company collects a corresponding sales revenue. The sales revenue is computed as the hourly rate, which depends on the car level requested by the order, multiplied by the number of hours a car is rented in the order. If in the end an order cannot be fulfilled and must be rejected, the IEDO company pays the customer half of the order's price to compensate the customer's loss. The IEDO company's objective of planning is to maximize its total profit, which is the total sales revenue minus the total compensation, for the orders in the planning horizon.
 
 \section{Mathematical model}
 
