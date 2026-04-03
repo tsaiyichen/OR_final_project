@@ -92,7 +92,8 @@ $G$ & Total number of games (e.g., 162). \\
 $P$ & Total number of pitchers (e.g., 12). \\
 $C_k$ & Expected runs scored by the lineup in game $k$. \\
 $E_{ij}$ & Expected runs allowed by pitcher $i$ in slot $j$. \\
-$M$ & A large positive constant for Big-M logic. \\ \hline
+$M$ & A large positive constant for Big-M logic. \\
+$\epsilon$ & A strictly positive tolerance to enforce the strict winning inequality. \\ \hline
 \textit{\textbf{Decision Variables}} & \\
 $x_{ijk} \in \{0, 1\}$ & 1 if pitcher $i$ is assigned to slot $j$ in game $k$; 0 otherwise. \\
 $w_k \in \{0, 1\}$ & 1 if game $k$ is a win; 0 otherwise. \\ \hline
@@ -111,7 +112,7 @@ With these notations, the total wins that the team seeks to maximize is:
 The following constraints ensure valid pitcher assignments and adhere to protection protocols:
 
 \begin{align}
-& \sum_{i\in I}\sum_{j\in J}E_{ij}x_{ijk} - C_{k} \le M(1-w_{k}) && \forall k\in K \\
+& \sum_{i\in I}\sum_{j\in J}E_{ij}x_{ijk} - C_{k} + \epsilon \le M(1-w_{k}) && \forall k\in K \\
 & \sum_{j\in J}x_{ijk} \le 1 && \forall i\in I, k\in K \\
 & \sum_{i\in I}x_{ijk} = 1 && \forall j\in J, k\in K \\
 & \sum_{t=0}^{2}\sum_{j\in J}x_{i,j,k+t} \le 2 && \forall i\in I, k\in K\backslash\{G-1,G\} \\
@@ -121,7 +122,8 @@ The following constraints ensure valid pitcher assignments and adhere to protect
 \end{align}
 
 The feasible region of the proposed model is governed by several sets of critical constraints.
-Specifically, Constraint (2) utilizes the Big-M method to link the binary winning variable $w_{k}$ with the scoring performance, ensuring that $w_{k}$ is assigned a value of 1 only if the total expected runs allowed by the assigned pitchers do not exceed the team's offensive runs $C_{k}$.
+Specifically, Constraint (2) utilizes the Big-M method along with a strictly positive tolerance ($\epsilon$) to link the binary winning variable $w_{k}$ with the scoring performance.
+This ensures that $w_{k}$ is assigned a value of 1 only if the total expected runs allowed by the assigned pitchers are strictly less than the team's offensive runs $C_{k}$.
 
 Regarding the assignment logic, Constraint (3) mandates that each pitcher is assigned to at most one time slot in any single game to prevent overlapping roles, while Constraint (4) ensures that every designated time slot is filled by exactly one pitcher to satisfy tactical requirements for a complete game.
 
@@ -132,21 +134,36 @@ Furthermore, Constraint (6) enforces a recovery period for middle relievers $(j=
 For starting pitchers $(j=1)$, Constraint (7) mandates a minimum four-game rest period in accordance with professional health protocols.
 Finally, Constraint (8) imposes a seasonal upper limit of 25 starts per pitcher to ensure long-term physical sustainability and workload management.
 
+\textbf{Calibration of Tolerance ($\epsilon$) and Pitching Responsibility:}
+
+
+In continuous mathematical programming, standard solvers require closed sets (i.e., $\le$) and cannot naturally process strict inequalities ($<$).
+To strictly enforce the baseball rule that a win requires fewer runs allowed than scored ($\sum E_{ij}x_{ijk} < C_k$), we introduce a marginally small positive tolerance, $\epsilon$.
+To ensure numerical stability without interfering with the data's statistical precision, the value of $\epsilon$ must be strictly greater than the solver's default feasibility tolerance (typically $10^{-6}$) but smaller than the data granularity of the expected runs metrics (typically $0.01$). Thus, we strategically set $\epsilon = 0.001$.
+
+Consequently, the formulated constraint $\sum E_{ij}x_{ijk} - C_{k} + \epsilon \le M(1-w_{k})$ intentionally assigns $w_k = 0$ in the event of an exact mathematical tie ($\sum E_{ij}x_{ijk} = C_{k}$).
+We acknowledge that the inability to naturally represent a tie is an inherent structural limitation of the model, arising from the approximation of discrete game outcomes via continuous expected metrics.
+However, while this forced classification is undeniably conservative, it explicitly aligns with the core philosophy of our modeling scenario.
+
+In our framework, the offensive run production ($C_k$) is treated as a predetermined, fixed parameter.
+Therefore, the sole responsibility for securing a victory relies entirely on the efficiency of the pitching deployment.
+If a pitching assignment merely allows as many runs as the offense provides, it has failed its primary defensive objective to preserve a lead.
+By utilizing $\epsilon$ to classify a projected tie as a non-win, the model accurately penalizes assignments that fail to definitively secure the game, reinforcing the expectation that the pitching staff must strictly outperform the projected run support.
+
 \textbf{Calibration of Big-M ($M$):}
 
-To properly enforce the logical implication in Constraint (2) using the Big-M method, the parameter $M$ must serve as a valid upper bound for the left-hand side of the inequality: $\sum_{i\in I}\sum_{j\in J} E_{ij}x_{ijk} - C_{k}$.
+To properly enforce the logical implication in Constraint (2) using the Big-M method, the parameter $M$ must serve as a valid upper bound for the newly formulated left-hand side of the inequality: $\sum_{i\in I}\sum_{j\in J} E_{ij}x_{ijk} - C_{k} + \epsilon$.
 
-A mathematically rigorous upper bound must evaluate the extreme values of both terms independently.
+A mathematically rigorous upper bound must evaluate the extreme values of all terms independently.
 Since the decision variables $x_{ijk}$ are binary, the supremum of the first term occurs when all pitchers are theoretically assigned simultaneously, yielding $\sum_{i,j} E_{ij}$.
 For the second term, because a baseball team cannot score negative runs, its minimum possible value is strictly bounded by $C^{min}_k = 0$.
-Consequently, a theoretically safe upper bound for the entire expression is derived as $\sum_{i,j} E_{ij} - 0$.
+Consequently, incorporating the tolerance, a theoretically safe upper bound for the entire expression is derived as $\sum_{i,j} E_{ij} - 0 + \epsilon$.
 
 However, governed by Constraint (4), exactly four pitcher slots are filled per game, meaning the true mathematical upper bound is significantly lower than this total sum.
 Furthermore, employing such a loose theoretical bound often results in weak linear relaxations, which can substantially deteriorate the solver's computational efficiency.
 To establish a tighter, practical bound, we integrate empirical domain knowledge.
 The modern MLB record for the largest single-game run differential occurred in 2007 (Texas Rangers vs. Baltimore Orioles, 30--3), establishing an extreme historical margin of 27 runs.
-Grounded in this worst-case scenario, setting $M$ to a constant such as 40 or 50 provides a sufficient buffer to encompass any realistic baseball anomaly while preserving a tight feasible region for optimal solver performance.
-
+Grounded in this worst-case scenario, setting $M$ to a constant such as 40 or 50 provides a sufficient buffer to safely encompass any realistic baseball anomaly—including the marginal addition of $\epsilon$—while preserving a tight feasible region for optimal solver performance.
 \section{Expected results}
 Our proposed model will evaluate pitcher performance using Earned Run Average (ERA), leveraging historical data sourced from leading databases such as Baseball Savant, FanGraphs, and Baseball Reference.
 
