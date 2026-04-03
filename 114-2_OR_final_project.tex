@@ -85,50 +85,60 @@ $w_k \in \{0, 1\}$ & 1 if game $k$ is a win; 0 otherwise. \\ \hline
 \end{tabular}
 \end{table}
 
-
 \section{Mathematical model}
 
-In this section, we formulate a mixed linear integer program to precisely describe our problem presented in Section 2. Let $I=\{1,...,n_{C}\}$ be the set of cars, and $L=\{1,...,n_{L}\}$ be the set of car levels. Level $l_{1}$ is considered as a lower level than level $l_{2}$ if $l_{1}<l_{2}$. All cars in the same level are considered the same. Moreover, let $K=\{0,1,...,n_{K}\}$ be the set of orders, where 0 is a virtual order that is scheduled at the first and the last positions on each car to ensure that for each non-virtual order, there is exactly one predecessor and one successor. We define the return station of order 0 on car $i$ as the initial station of car $i$. In the sequel, we use $i$ as the index of cars and $j$ and $k$ as the indices of orders.
+In this section, we formulate a mixed linear integer program to precisely describe our problem presented in Problem Description.
 
-To assign orders to cars, let the decision variable $x_{ik} \in \{0,1\}$ be 1 if the demand of order $k$ is satisfied by car $i$ or 0 otherwise. If order $k$ is fulfilled, the IEDO company earns $R_{k}=F_{l}H_{k}$ dollars as its sales revenue, where $F_{l}$ is the hourly rate of a level-$l$ car, and $H_{k}$ is the number of hours a car is rented in order $k$. The IEDO company pays $0.5R_{k}$ to compensate the customer if order $k$ cannot be fulfilled and must be rejected. With these notations, the total cost that the IEDO company seeks to minimize is then
+\subsection*{Sets and Indices}
+Let $I=\{1,...,P\}$, $J=\{1,...,4\}$, and $K=\{1,...,G\}$, and denote the sets of pitchers, within-game time slots, and the games, respectively.
+A pitcher assigned to the first time slot $(m=1)$ is designated as the Starting Pitcher.
+Those assigned to the second time slot $(m=2,3)$ serve as Middle Relievers, while pitchers in the fourth $(m=4)$ slots are referred to as the Closer, respectively.
 
+\subsection*{Parameters and Variables}
+To assign pitchers to specific games and time slots, we define the following binary decision variable:
+\begin{equation*}
+x_{ijk} =
+\begin{cases}
+1, & \text{if pitcher } i \text{ is assigned to time slot } j \text{ in game } k \\
+0, & \text{otherwise}
+\end{cases}
+\end{equation*}
+
+To simplify the model, the runs scored by the lineup in game $k$ are treated as a known parameter, denoted by $\overline{C_{k}}$. Furthermore, based on historical performance data and expected pitch counts, we let $E_{ij}$ represent the expected runs allowed by pitcher $i$ during time slot $j$.
+
+The outcome of game $k$ is represented by the binary variable $w_{k}$ where $w_{k}=1$ (a win) if the runs scored by the lineup exceed the total runs allowed by the assigned pitchers, and $w_{k}=0$ otherwise.
+
+\subsection*{Objective Function}
+With these notations, the total wins that the team seeks to maximize is:
 \begin{equation}
-\min \sum_{k \in K\setminus\{0\}} \left( R_{k} \left( \sum_{i \in I} x_{ik} \right) - 0.5R_{k} \left( 1 - \sum_{i \in I} x_{ik} \right) \right)
+\max \sum_{k\in K}w_{k}
 \end{equation}
 
-In addition to assigning a car to satisfy the demand of an order, the sequence of orders on the same car should also be determined. Let $y_{ijk} \in \{0,1\}$ be 1 if order $k$ is scheduled right after order $j$ on car $i$ or 0 otherwise. An order $k$ can be scheduled after another order $j$ on car $i$ only if the car levels asked by orders $j$ and $k$ match the level of car $i$ (upgrade considered), and the length of the period between the return time of order $j$ and the pick-up time of order $k$ is sufficient (for cleaning, possible car rearranging, and being ready). Let $A_{ijk}$ be 1 if order $k$ can be scheduled after order $j$ on car $i$ or 0 otherwise. Note that $A_{ijk}$ is a parameter and is readily available once the information of car $i$ and orders $j$ and $k$ are provided. The constraints that ensure a feasible car-order assignment is
+\subsection*{Constraints}
+The following constraints ensure valid pitcher assignments and adhere to protection protocols:
 
 \begin{align}
-\sum_{i \in I} x_{ik} &\le 1 \quad \forall k \in K\setminus\{0\} \\
-y_{ijk} &\le A_{ijk} \quad \forall i \in I, j \in K, k \in K
+& \sum_{i\in I}\sum_{j\in J}E_{ij}x_{ijk} - C_{k} \le M(1-w_{k}) && \forall k\in K \\
+& \sum_{j\in J}x_{ijk} \le 1 && \forall i\in I, k\in K \\
+& \sum_{i\in I}x_{ijk} = 1 && \forall j\in J, k\in K \\
+& \sum_{t=0}^{2}\sum_{j\in J}x_{i,j,k+t} \le 2 && \forall i\in I, k\in K\backslash\{G-1,G\} \\
+& x_{i2k} + x_{i3k} + \sum_{j\in J}x_{ij,k+1} \le 1 && \forall i\in I, k\in K\backslash\{G\} \\
+& x_{i1k} + \sum_{t=1}^{4}\sum_{j\in J}x_{ij,k+t} \le 1 && \forall i\in I, k\in K\backslash\{G-3,...,G\} \\
+& \sum_{k\in K}x_{i1k} \le 25 && \forall i\in I
 \end{align}
 
-Constraint (2) ensures that each non-virtual order will be assigned to at most one car. Constraint (3) set $y_{ijk}$ to 0 if order $k$ cannot be scheduled after order $j$ on car $i$ ($A_{ijk}=0$).
+The feasible region of the proposed model is governed by several sets of critical constraints.
+Specifically, Constraint (2) utilizes the Big-M method to link the binary winning variable $w_{k}$ with the scoring performance, ensuring that $w_{k}$ is assigned a value of 1 only if the total expected runs allowed by the assigned pitchers do not exceed the team's offensive runs $C_{k}$.
 
-There are more constraints for the sequence of orders on a car. Initially, the order sequence of each car begins with a virtual order, which is followed by at most one real order. Moreover, if an order is allocated to a car, there should be an order (virtual order included) preceding it and another order (virtual order included) succeeding it. We then have
+Regarding the assignment logic, Constraint (3) mandates that each pitcher is assigned to at most one time slot in any single game to prevent overlapping roles, while Constraint (4) ensures that every designated time slot is filled by exactly one pitcher to satisfy tactical requirements for a complete game.
 
-\begin{align}
-\sum_{k \in K\setminus\{0\}} y_{i0k} &\le 1 \quad \forall i \in I \\
-\sum_{k \in K} y_{ijk} &= x_{ij} \quad \forall i \in I, j \in K\setminus\{0\} \\
-\sum_{j \in K} y_{ijk} &= x_{ik} \quad \forall i \in I, k \in K\setminus\{0\}
-\end{align}
+To manage pitcher health and workload, Constraint (5) prohibits closers from appearing in more than two games within any three-day window, effectively preventing three consecutive days of pitching.
+While the restriction can be universally applied to all pitcher roles including starting pitchers and middle relievers as the rest protocols for those pitchers are significantly more stringent.
 
-Constraint (4) ensures the virtual order on each car is followed by at most one real order. Constraint (5) ensures that when order $j$ is fulfilled by car $i$, i.e., $x_{ij}=1$, there should be exactly one order succeeding order $j$, and thus $\sum_{k \in K} y_{ijk}=1$. When $x_{ij}=0$, which implies $\sum_{k \in K} y_{ijk}=0$, there should be no order adjacent to order $j$ on car $i$. The meaning of constraint (6) is similar to constraint (5).
+Furthermore, Constraint (6) enforces a recovery period for middle relievers $(j=2,3)$ by prohibiting immediate next-game assignments.
+For starting pitchers $(j=1)$, Constraint (7) mandates a minimum four-game rest period in accordance with professional health protocols.
+Finally, Constraint (8) imposes a seasonal upper limit of 25 starts per pitcher to ensure long-term physical sustainability and workload management.
 
-To address rearrangement, we use $T_{ijk}$ to denote the amount of time required to move car $i$ from the return station of order $j$ to the pick-up station of order $k$, and let $B$ be the limit of the total amount of time spent on moving all cars. The budget constraint of rearranging cars is then
-
-\begin{equation}
-\sum_{i \in I} \sum_{j \in J} \sum_{k \in K\setminus\{0\}} T_{ijk}y_{ijk} \le B.
-\end{equation}
-
-The LHS of constraint (7) computes the total amount of time relocating all cars, which cannot exceed the predetermined limit $B$. To complete the formulation, we finally add
-
-\begin{align}
-x_{ik} &\in \{0,1\} \quad \forall i \in I, k \in K \\
-y_{ijk} &\in \{0,1\} \quad \forall i \in I, j \in K, k \in K
-\end{align}
-
-which are the binary constraints of the decision variables.
 
 \section{Expected results}
 Our proposed model will evaluate pitcher performance using Earned Run Average (ERA), leveraging historical data sourced from leading databases such as Baseball Savant, FanGraphs, and Baseball Reference.
