@@ -61,14 +61,19 @@ The total runs allowed in a game are calculated by summing the expected runs fro
 In this model, a standard 9-inning game is divided into four specific time slots:
 \begin{itemize}
     \item $j=1$: Starting Pitcher (Innings 1--5).
-    \item $j=2, 3$: Middle Relievers (Innings 6--7).
-    \item $j=4$: Closer (Innings 8--9).
+    \item $j=2$: Middle Relievers (Innings 6--7).
+    \item $j=3, 4$: Closer (Innings 8 and 9).
 \end{itemize}
-Each pitcher is restricted to at most one time slot per game. Furthermore, the following pitcher protection constraints are enforced:
+
+
+\textbf{Note on Late-Inning Roles:} In standard MLB operations, the 8th inning is typically handled by a Setup Man, while the 9th inning is reserved for the Closer. However, because both roles operate under high-leverage situations and share nearly identical physiological demands, usage patterns, and rest requirements, our model uniformly classifies pitchers assigned to the 8th ($j=3$) and 9th ($j=4$) innings under the ``Closer'' category. Consequently, they are subject to the exact same set of protective constraints.
+
+Each pitcher is restricted to at most one time slot per game.
+Furthermore, the following pitcher protection constraints are enforced:
 \begin{enumerate}
     \item \textbf{Starting Pitcher Rest}: A pitcher assigned as a starter ($j=1$) cannot appear in the subsequent four games.
-    \item \textbf{Closer Fatigue}: A pitcher assigned as a closer ($j=4$) cannot pitch in three consecutive days.
-    \item \textbf{Reliever Rest}: Middle relievers ($j=2, 3$) are prohibited from appearing in the immediate next game.
+    \item \textbf{Closer Fatigue}: A pitcher assigned as a closer ($j=3, 4$) cannot pitch in three consecutive days.
+    \item \textbf{Reliever Rest}: Middle relievers ($j=2$) are prohibited from appearing in the immediate next game.
     \item \textbf{Seasonal Limit}: No pitcher can exceed 25 total starts in a single season.
 \end{enumerate}
 
@@ -80,7 +85,7 @@ Each pitcher is restricted to at most one time slot per game. Furthermore, the f
 \textbf{Symbol} & \textbf{Description} \\ \hline
 \textit{\textbf{Sets and Indices}} & \\
 $I = \{1, \dots, P\}$ & Set of pitchers, indexed by $i$. \\
-$J = \{1, 2, 3, 4\}$ & Set of roles/slots: 1 (Starter), 2--3 (Relievers), 4 (Closer). \\
+$J = \{1, 2, 3, 4\}$ & Set of roles/slots: 1 (Starter), 2 (Relievers), 3-4 (Closer). \\
 $K = \{1, \dots, G\}$ & Set of games in the season, indexed by $k$. \\ \hline
 \textit{\textbf{Parameters}} & \\
 $G$ & Total number of games (e.g., 162). \\
@@ -96,27 +101,6 @@ $w_k \in \{0, 1\}$ & 1 if game $k$ is a win; 0 otherwise. \\ \hline
 
 \section{Mathematical model}
 
-In this section, we formulate a mixed linear integer program to precisely describe our problem presented in Problem Description.
-
-\subsection*{Sets and Indices}
-Let $I=\{1,...,P\}$, $J=\{1,...,4\}$, and $K=\{1,...,G\}$, and denote the sets of pitchers, within-game time slots, and the games, respectively.
-A pitcher assigned to the first time slot $(m=1)$ is designated as the Starting Pitcher.
-Those assigned to the second time slot $(m=2,3)$ serve as Middle Relievers, while pitchers in the fourth $(m=4)$ slots are referred to as the Closer, respectively.
-
-\subsection*{Parameters and Variables}
-To assign pitchers to specific games and time slots, we define the following binary decision variable:
-\begin{equation*}
-x_{ijk} =
-\begin{cases}
-1, & \text{if pitcher } i \text{ is assigned to time slot } j \text{ in game } k \\
-0, & \text{otherwise}
-\end{cases}
-\end{equation*}
-
-To simplify the model, the runs scored by the lineup in game $k$ are treated as a known parameter, denoted by $\overline{C_{k}}$. Furthermore, based on historical performance data and expected pitch counts, we let $E_{ij}$ represent the expected runs allowed by pitcher $i$ during time slot $j$.
-
-The outcome of game $k$ is represented by the binary variable $w_{k}$ where $w_{k}=1$ (a win) if the runs scored by the lineup exceed the total runs allowed by the assigned pitchers, and $w_{k}=0$ otherwise.
-
 \subsection*{Objective Function}
 With these notations, the total wins that the team seeks to maximize is:
 \begin{equation}
@@ -131,7 +115,7 @@ The following constraints ensure valid pitcher assignments and adhere to protect
 & \sum_{j\in J}x_{ijk} \le 1 && \forall i\in I, k\in K \\
 & \sum_{i\in I}x_{ijk} = 1 && \forall j\in J, k\in K \\
 & \sum_{t=0}^{2}\sum_{j\in J}x_{i,j,k+t} \le 2 && \forall i\in I, k\in K\backslash\{G-1,G\} \\
-& x_{i2k} + x_{i3k} + \sum_{j\in J}x_{ij,k+1} \le 1 && \forall i\in I, k\in K\backslash\{G\} \\
+& x_{i2k} + \sum_{j\in J}x_{ij,k+1} \le 1 && \forall i\in I, k\in K\backslash\{G\} \\
 & x_{i1k} + \sum_{t=1}^{4}\sum_{j\in J}x_{ij,k+t} \le 1 && \forall i\in I, k\in K\backslash\{G-3,...,G\} \\
 & \sum_{k\in K}x_{i1k} \le 25 && \forall i\in I
 \end{align}
@@ -144,17 +128,33 @@ Regarding the assignment logic, Constraint (3) mandates that each pitcher is ass
 To manage pitcher health and workload, Constraint (5) prohibits closers from appearing in more than two games within any three-day window, effectively preventing three consecutive days of pitching.
 While the restriction can be universally applied to all pitcher roles including starting pitchers and middle relievers as the rest protocols for those pitchers are significantly more stringent.
 
-Furthermore, Constraint (6) enforces a recovery period for middle relievers $(j=2,3)$ by prohibiting immediate next-game assignments.
+Furthermore, Constraint (6) enforces a recovery period for middle relievers $(j=2)$ by prohibiting immediate next-game assignments.
 For starting pitchers $(j=1)$, Constraint (7) mandates a minimum four-game rest period in accordance with professional health protocols.
 Finally, Constraint (8) imposes a seasonal upper limit of 25 starts per pitcher to ensure long-term physical sustainability and workload management.
 
+\textbf{Calibration of Big-M ($M$):}
+
+To properly enforce the logical implication in Constraint (2) using the Big-M method, the parameter $M$ must serve as a valid upper bound for the left-hand side of the inequality: $\sum_{i\in I}\sum_{j\in J} E_{ij}x_{ijk} - C_{k}$.
+
+A mathematically rigorous upper bound must evaluate the extreme values of both terms independently.
+Since the decision variables $x_{ijk}$ are binary, the supremum of the first term occurs when all pitchers are theoretically assigned simultaneously, yielding $\sum_{i,j} E_{ij}$.
+For the second term, because a baseball team cannot score negative runs, its minimum possible value is strictly bounded by $C^{min}_k = 0$.
+Consequently, a theoretically safe upper bound for the entire expression is derived as $\sum_{i,j} E_{ij} - 0$.
+
+However, governed by Constraint (4), exactly four pitcher slots are filled per game, meaning the true mathematical upper bound is significantly lower than this total sum.
+Furthermore, employing such a loose theoretical bound often results in weak linear relaxations, which can substantially deteriorate the solver's computational efficiency.
+To establish a tighter, practical bound, we integrate empirical domain knowledge.
+The modern MLB record for the largest single-game run differential occurred in 2007 (Texas Rangers vs. Baltimore Orioles, 30--3), establishing an extreme historical margin of 27 runs.
+Grounded in this worst-case scenario, setting $M$ to a constant such as 40 or 50 provides a sufficient buffer to encompass any realistic baseball anomaly while preserving a tight feasible region for optimal solver performance.
 
 \section{Expected results}
 Our proposed model will evaluate pitcher performance using Earned Run Average (ERA), leveraging historical data sourced from leading databases such as Baseball Savant, FanGraphs, and Baseball Reference.
+
 The primary objective is to optimize pitcher allocation across a season, subject to the realistic operational constraints detailed in Section 2, in order to maximize a team's expected wins.
 Given the computational complexity of scheduling for a standard 162-game season, relying solely on exact Integer Programming (IP) will be intractable.
 Therefore, we aim to implement heuristic algorithms designed to efficiently generate near-optimal schedules.
 To validate our approach, we will benchmark our heuristic results against exact IP solutions on smaller problem instances.
+
 We anticipate achieving a minimal optimality gap and outperforming existing baseline heuristics.
 Ultimately, we envision this research yielding a robust, computationally efficient framework that translates complex mathematical optimization into highly actionable, real-world strategies for front offices.
 \end{document}
