@@ -3,6 +3,9 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{geometry}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{float}
 \geometry{a4paper, margin=1in}
 \usepackage{booktabs}
 
@@ -19,11 +22,11 @@
 
 \author{
     \textbf{Group 6} \\[0.4cm] % 填入組別，並在下方增加 0.4cm 的間距
-    R14725049 Yi-Chen, Tsai \\[0.4cm]
-    R14323011 Pei-Hsuan, Chung \\[0.4cm]
-    R13723065 Cheng-Hsien, Li \\[0.4cm]
-    R13723045 Yung-Yao, Li	 \\[0.4cm]
-    B09302150 Chien-Ting, Cheng\\[0.4cm]
+    R14725049 Yi-Chen Tsai \\[0.4cm]
+    R14323011 Pei-Hsuan Chung \\[0.4cm]
+    R13723065 Cheng-Hsien Li \\[0.4cm]
+    R13723045 Yung-Yao Li	 \\[0.4cm]
+    B09302150 Chien-Ting Cheng\\[0.4cm]
     National Taiwan University \\[0.4cm]
 }
 
@@ -92,7 +95,8 @@ $G$ & Total number of games (e.g., 162). \\
 $P$ & Total number of pitchers (e.g., 12). \\
 $C_k$ & Expected runs scored by the lineup in game $k$. \\
 $E_{ij}$ & Expected runs allowed by pitcher $i$ in slot $j$. \\
-$M$ & A large positive constant for Big-M logic. \\ \hline
+$M$ & A large positive constant for Big-M logic. \\
+$\epsilon$ & A strictly positive tolerance to enforce the strict winning inequality \\ \hline
 \textit{\textbf{Decision Variables}} & \\
 $x_{ijk} \in \{0, 1\}$ & 1 if pitcher $i$ is assigned to slot $j$ in game $k$; 0 otherwise. \\
 $w_k \in \{0, 1\}$ & 1 if game $k$ is a win; 0 otherwise. \\ \hline
@@ -111,7 +115,7 @@ With these notations, the total wins that the team seeks to maximize is:
 The following constraints ensure valid pitcher assignments and adhere to protection protocols:
 
 \begin{align}
-& \sum_{i\in I}\sum_{j\in J}E_{ij}x_{ijk} - C_{k} \le M(1-w_{k}) && \forall k\in K \\
+& \sum_{i\in I}\sum_{j\in J}E_{ij}x_{ijk} - C_{k} + \epsilon \le M(1-w_{k}) && \forall k\in K \\
 & \sum_{j\in J}x_{ijk} \le 1 && \forall i\in I, k\in K \\
 & \sum_{i\in I}x_{ijk} = 1 && \forall j\in J, k\in K \\
 & \sum_{t=0}^{2}\sum_{j\in J}x_{i,j,k+t} \le 2 && \forall i\in I, k\in K\backslash\{G-1,G\} \\
@@ -120,41 +124,127 @@ The following constraints ensure valid pitcher assignments and adhere to protect
 & \sum_{k\in K}x_{i1k} \le 25 && \forall i\in I
 \end{align}
 
-The feasible region of the proposed model is governed by several sets of critical constraints.
-Specifically, Constraint (2) utilizes the Big-M method to link the binary winning variable $w_{k}$ with the scoring performance, ensuring that $w_{k}$ is assigned a value of 1 only if the total expected runs allowed by the assigned pitchers do not exceed the team's offensive runs $C_{k}$.
+
+The feasible region of the proposed model is governed by several sets of critical constraints. Specifically, Constraint (2) utilizes the Big-M method along with a strictly positive tolerance ($\epsilon$) to link the binary winning variable $w_k$ with the scoring performance. This ensures that $w_k$ is assigned a value of 1 only if the total expected runs allowed by the assigned pitchers are strictly less than the team's offensive runs $C_k$.
 
 Regarding the assignment logic, Constraint (3) mandates that each pitcher is assigned to at most one time slot in any single game to prevent overlapping roles, while Constraint (4) ensures that every designated time slot is filled by exactly one pitcher to satisfy tactical requirements for a complete game.
 
-To manage pitcher health and workload, Constraint (5) prohibits closers from appearing in more than two games within any three-day window, effectively preventing three consecutive days of pitching.
-While the restriction can be universally applied to all pitcher roles including starting pitchers and middle relievers as the rest protocols for those pitchers are significantly more stringent.
+To manage pitcher health and workload, Constraint (5) prohibits closers from appearing in more than two games within any three-day window, effectively preventing three consecutive days of pitching. While the restriction can be universally applied to all pitcher roles including starting pitchers and middle relievers as the rest protocols for those pitchers are significantly more stringent.
 
-Furthermore, Constraint (6) enforces a recovery period for middle relievers $(j=2)$ by prohibiting immediate next-game assignments.
-For starting pitchers $(j=1)$, Constraint (7) mandates a minimum four-game rest period in accordance with professional health protocols.
-Finally, Constraint (8) imposes a seasonal upper limit of 25 starts per pitcher to ensure long-term physical sustainability and workload management.
+Furthermore, Constraint (6) enforces a recovery period for middle relievers ($j = 2$) by prohibiting immediate next-game assignments. For starting pitchers ($j = 1$), Constraint (7) mandates a minimum four-game rest period in accordance with professional health protocols. Finally, Constraint (8) imposes a seasonal upper limit of 25 starts per pitcher to ensure long-term physical sustainability and workload management.
+
+\textbf{Calibration of Tolerance ($\epsilon$) and Pitching Responsibility:}
+
+In continuous mathematical programming, standard solvers require closed sets (i.e., $\le$) and cannot naturally process strict inequalities ($<$). To strictly enforce the baseball rule that a win requires fewer runs allowed than scored ($\sum E_{ij}x_{ijk} < C_k$), we introduce a marginally small positive tolerance, $\epsilon$. To ensure numerical stability without interfering with the data's statistical precision, the value of $\epsilon$ must be strictly greater than the solver's default feasibility tolerance (typically $10^{-6}$) but smaller than the data granularity of the expected runs metrics (typically $0.01$). Thus, we strategically set $\epsilon = 0.001$.
+
+Consequently, the formulated constraint $\sum E_{ij}x_{ijk} - C_k + \epsilon \le M(1 - w_k)$ intentionally assigns $w_k = 0$ in the event of an exact mathematical tie ($\sum E_{ij}x_{ijk} = C_k$). We acknowledge that the inability to naturally represent a tie is an inherent structural limitation of the model, arising from the approximation of discrete game outcomes via continuous expected metrics. However, while this forced classification is undeniably conservative, it explicitly aligns with the core philosophy of our modeling scenario.
+
+In our framework, the offensive run production ($C_k$) is treated as a predetermined, fixed parameter. Therefore, the sole responsibility for securing a victory relies entirely on the efficiency of the pitching deployment. If a pitching assignment merely allows as many runs as the offense provides, it has failed its primary defensive objective to preserve a lead. By utilizing $\epsilon$ to classify a projected tie as a non-win, the model accurately penalizes assignments that fail to definitively secure the game, reinforcing the expectation that the pitching staff must strictly outperform the projected run support.
 
 \textbf{Calibration of Big-M ($M$):}
 
-To properly enforce the logical implication in Constraint (2) using the Big-M method, the parameter $M$ must serve as a valid upper bound for the left-hand side of the inequality: $\sum_{i\in I}\sum_{j\in J} E_{ij}x_{ijk} - C_{k}$.
+To properly enforce the logical implication in Constraint (2) using the Big-M method, the parameter $M$ must serve as a valid upper bound for the newly formulated left-hand side of the inequality: $\sum_{i \in I} \sum_{j \in J} E_{ij}x_{ijk} - C_k + \epsilon$.
 
-A mathematically rigorous upper bound must evaluate the extreme values of both terms independently.
-Since the decision variables $x_{ijk}$ are binary, the supremum of the first term occurs when all pitchers are theoretically assigned simultaneously, yielding $\sum_{i,j} E_{ij}$.
-For the second term, because a baseball team cannot score negative runs, its minimum possible value is strictly bounded by $C^{min}_k = 0$.
-Consequently, a theoretically safe upper bound for the entire expression is derived as $\sum_{i,j} E_{ij} - 0$.
+A mathematically rigorous upper bound must evaluate the extreme values of all terms independently. Since the decision variables $x_{ijk}$ are binary, the supremum of the first term occurs when all pitchers are theoretically assigned simultaneously, yielding $\sum_{i,j} E_{ij}$. For the second term, because a baseball team cannot score negative runs, its minimum possible value is strictly bounded by $C_k^{\min} = 0$. Consequently, incorporating the tolerance, a theoretically safe upper bound for the entire expression is derived as $\sum_{i,j} E_{ij} - 0 + \epsilon$.
 
-However, governed by Constraint (4), exactly four pitcher slots are filled per game, meaning the true mathematical upper bound is significantly lower than this total sum.
-Furthermore, employing such a loose theoretical bound often results in weak linear relaxations, which can substantially deteriorate the solver's computational efficiency.
-To establish a tighter, practical bound, we integrate empirical domain knowledge.
-The modern MLB record for the largest single-game run differential occurred in 2007 (Texas Rangers vs. Baltimore Orioles, 30--3), establishing an extreme historical margin of 27 runs.
-Grounded in this worst-case scenario, setting $M$ to a constant such as 40 or 50 provides a sufficient buffer to encompass any realistic baseball anomaly while preserving a tight feasible region for optimal solver performance.
+However, governed by Constraint (4), exactly four pitcher slots are filled per game, meaning the true mathematical upper bound is significantly lower than this total sum. Furthermore, employing such a loose theoretical bound often results in weak linear relaxations, which can substantially deteriorate the solver's computational efficiency. To establish a tighter, practical bound, we integrate empirical domain knowledge. The modern MLB record for the largest single-game run differential occurred in 2007 (Texas Rangers vs. Baltimore Orioles, 30--3), establishing an extreme historical margin of 27 runs. Grounded in this worst-case scenario, setting $M$ to a constant such as 40 or 50 provides a sufficient buffer to safely encompass any realistic baseball anomaly---including the marginal addition of $\epsilon$---while preserving a tight feasible region for optimal solver performance.
 
-\section{Expected results}
-Our proposed model will evaluate pitcher performance using Earned Run Average (ERA), leveraging historical data sourced from leading databases such as Baseball Savant, FanGraphs, and Baseball Reference.
 
-The primary objective is to optimize pitcher allocation across a season, subject to the realistic operational constraints detailed in Section 2, in order to maximize a team's expected wins.
-Given the computational complexity of scheduling for a standard 162-game season, relying solely on exact Integer Programming (IP) will be intractable.
-Therefore, we aim to implement heuristic algorithms designed to efficiently generate near-optimal schedules.
-To validate our approach, we will benchmark our heuristic results against exact IP solutions on smaller problem instances.
+\section{Algorithms}
 
-We anticipate achieving a minimal optimality gap and outperforming existing baseline heuristics.
-Ultimately, we envision this research yielding a robust, computationally efficient framework that translates complex mathematical optimization into highly actionable, real-world strategies for front offices.
+\subsection{Motivation and Core Concepts}
+A traditional greedy approach for pitcher scheduling might simply assign the pitcher with the lowest Expected Runs ERA to the game with the highest priority.
+However, this strategy is inherently short-sighted.
+For instance, if the team's offense is projected to score a massive 10 runs in a game, using the team's best starting pitcher (the "ace") is a waste of valuable resources, as a mediocre pitcher would likely secure the win just as easily.
+Conversely, utilizing the ace in an easily winnable game means that pitcher becomes unavailable for upcoming, tightly contested matchups due to mandatory rest days.
+
+To address this, we propose the \textbf{Lookahead Minimal-Slack Heuristic}. This algorithm is built upon two core concepts:
+\begin{enumerate}
+    \item \textbf{Minimal Slack (Winning by just enough):} Instead of minimizing total runs allowed, the goal is to secure a win using the minimum required pitching talent. If the team's expected runs scored is $C_k$, the algorithm seeks a pitching combination whose expected runs allowed is just below $C_k$. This preserves top-tier pitchers for future games. If a game is projected to be an unavoidable loss (e.g., $C_k$ is extremely low), the algorithm strategically concedes by deploying the weakest available pitchers, thereby protecting the core roster.
+    \item \textbf{Lookahead Simulation (Sliding Window):} To avoid making poor long-term decisions, the algorithm does not just look at today's game. Before committing to a pitching assignment, it generates a few sensible options (candidates) for today. It then rapidly simulates the next few days of games for each option to see which decision yields the highest total number of wins over a specific time window.
+\end{enumerate}
+
+\subsection{Algorithm Steps}
+The algorithm processes the schedule game by game using a sliding window of size $W$ (typically set to 5 to cover the standard "start on four days' rest" rotation).
+
+\textbf{Step 1: Determine the Winning Condition.} For the current game $k$, we evaluate potential pitching combinations based on their total expected runs allowed.
+A combination successfully secures a "win" if this total is strictly less than the team's expected runs scored ($C_k$).
+
+\textbf{Step 2: Generate Candidate Assignments.} Based on the available pitchers, the algorithm generates a small set of representative assignment options for game $k$:
+\begin{itemize}
+    \item \textit{Efficient Wins:} Combinations that result in a win, but with the smallest possible margin (the expected runs allowed is as close to $T_k$ as possible).
+    \item \textit{Strategic Concessions:} Combinations utilizing the pitchers with the highest expected runs allowed, designed to absorb a loss while saving good pitchers.
+\end{itemize}
+
+\textbf{Step 3: Lookahead Simulation.} For each generated candidate, the algorithm temporarily applies the assignment and simulates the remaining $W-1$ games in the window. The simulation uses a fast, simplified greedy logic: for each future game, it attempts to find an "Efficient Win," and if impossible, defaults to a "Strategic Concession." The algorithm tallies the total projected wins over these $W$ games for each candidate.
+
+\textbf{Step 4: Commit and Slide.} The algorithm compares the simulation results of all candidates. It selects the candidate that produced the highest number of total wins across the window. This assignment is permanently committed for game $k$. The pitcher rest constraints and season limits are updated, and the algorithm moves forward to game $k+1$.
+
+\subsection{Pseudo-code}
+
+\begin{algorithm}[H]
+\caption{Lookahead Minimal-Slack Heuristic}
+\label{alg:heuristic}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Schedule of $G$ games, Expected runs scored $C_k$, Pitcher metrics $E_{ij}$, Window size $W$
+\State \textbf{Initialize:} Pitcher availability constraints (rest days $= 0$, starts $= 0$)
+\For{$k = 1$ \textbf{to} $G$}
+    \State Identify set of currently available pitchers satisfying all rest and seasonal constraints
+    \State \textbf{Generate Candidates Set} $S_k$:
+    \State \quad Find combinations $c$ where $\sum E_{ij} < C_k$ (Sort by highest $\sum E_{ij}$, keep top 2)
+    \State \quad Find combinations $c$ where $\sum E_{ij} \ge C_k$ (Sort by highest $\sum E_{ij}$, keep top 1 for concession)
+    \State $BestWins \gets -1$
+    \State $BestCandidate \gets \text{null}$
+
+    \For{\textbf{each} candidate $c \in S_k$}
+        \State $SimulatedWins \gets \text{EvaluateWin}(c, k)$
+        \State Create a temporary copy of pitcher availability, applying usage from candidate $c$
+
+        \Comment{Simulate the rest of the window}
+        \For{$t = k+1$ \textbf{to} $\min(k+W-1, G)$}
+            \State Identify available pitchers in temporary state
+            \State Greedily select combination $c'$ that minimizes $(C_t - \sum E_{ij})$ while $> 0$
+            \If{no such combination exists}
+                \State Greedily select combination $c'$ with highest $\sum E_{ij}$ (Concede)
+            \EndIf
+            \State $SimulatedWins \gets SimulatedWins + \text{EvaluateWin}(c', t)$
+            \State Update temporary pitcher availability based on $c'$
+        \EndFor
+
+        \If{$SimulatedWins > BestWins$}
+            \State $BestWins \gets SimulatedWins$
+            \State $BestCandidate \gets c$
+        \EndIf
+    \EndFor
+
+    \State \textbf{Commit:} Permanently assign $BestCandidate$ to game $k$
+    \State Update actual pitcher rest days and seasonal starts limits based on $BestCandidate$
+\EndFor
+\State \textbf{Return:} Final pitching schedule and total wins
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Time Complexity Analysis}
+
+Let $G$ be the total number of games, $P$ be the number of pitchers on the active roster, $W$ be the sliding window size, and $C$ be the number of candidates generated per game.
+
+The time complexity can be broken down per game as follows:
+\begin{enumerate}
+    \item \textbf{Candidate Generation:} Selecting 4 pitchers (for the starter, middle reliever, and two closer slots) from $P$ available pitchers requires evaluating approximately $O(P^4)$ permutations. To identify the top candidates (Minimal Slack and Concessions), sorting these combinations requires $O(P^4 \log(P^4)) = O(P^4 \log P)$ operations.
+    \item \textbf{Lookahead Simulation:} For each of the $C$ generated candidates, the algorithm simulates the remaining $W-1$ games in the window.
+    During each simulated game, the greedy selection evaluates $O(P^4)$ combinations to find the minimal positive slack.
+    Thus, the simulation phase requires $O(C \cdot W \cdot P^4)$ operations.
+\end{enumerate}
+
+Combining these steps, the computational cost for a single game is $O(P^4 \log P + C \cdot W \cdot P^4)$.
+Since the algorithm processes the schedule sequentially over $G$ games, the overall time complexity is:
+\begin{equation}
+    O\Big(G \cdot P^4 \cdot (\log P + C \cdot W)\Big)
+\end{equation}
+
+\textbf{Practical Implications:} In the operational context of a baseball team, the parameters $P$, $C$, and $W$ are strictly bounded constants (e.g., $P \le 15$ pitchers, $C \le 5$ candidates, and $W = 5$ days).
+Consequently, the polynomial term $P^4 \cdot (\log P + C \cdot W)$ collapses into a manageable constant factor.
+
+Therefore, the effective time complexity of the algorithm is \textbf{linear, $O(G)$}, with respect to the season length.
+This guarantees that the algorithm can generate a near-optimal pitching schedule for a full 162-game season almost instantaneously, providing front offices with a highly scalable and actionable decision-support tool.
 \end{document}
