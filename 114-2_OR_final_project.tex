@@ -18,7 +18,7 @@
 
 
 
-\title{Operations Research, Spring 2026 (114-2) \\ Final Project Proposal}
+\title{Operations Research, Spring 2026 (114-2) \\ Final Project}
 
 \author{
     \textbf{Group 6} \\[0.4cm] % 填入組別，並在下方增加 0.4cm 的間距
@@ -120,7 +120,7 @@ The following constraints ensure valid pitcher assignments and adhere to protect
 & \sum_{i\in I}x_{ijk} = 1 && \forall j\in J, k\in K \\
 & \sum_{t=0}^{2}\sum_{j\in J}x_{i,j,k+t} \le 2 && \forall i\in I, k\in K\backslash\{G-1,G\} \\
 & x_{i2k} + \sum_{j\in J}x_{ij,k+1} \le 1 && \forall i\in I, k\in K\backslash\{G\} \\
-& x_{i1k} + \sum_{t=1}^{4}\sum_{j\in J}x_{ij,k+t} \le 1 && \forall i\in I, k\in K\backslash\{G-3,...,G\} \\
+& \sum_{t=1}^{4}\sum_{j\in J}x_{ij,k+t} \le 4 \cdot (1 - x_{i1k}) \quad && \forall i\in I, k\in K\backslash\{G-3,...,G\} \\
 & \sum_{k\in K}x_{i1k} \le 25 && \forall i\in I
 \end{align}
 
@@ -242,7 +242,7 @@ Since the algorithm processes the schedule sequentially over $G$ games, the over
     O\Big(G \cdot P^4 \cdot (\log P + C \cdot W)\Big)
 \end{equation}
 
-\textbf{Practical Implications:} In the operational context of a baseball team, the parameters $P$, $C$, and $W$ are strictly bounded constants (e.g., $P \le 15$ pitchers, $C \le 5$ candidates, and $W = 5$ days).
+\textbf{Practical Implications:} In the operational context of a baseball team, the parameters $P$, $C$, and $W$ are strictly bounded constants (e.g., $P \le 13$ pitchers, $C \le 5$ candidates, and $W = 5$ days).
 Consequently, the polynomial term $P^4 \cdot (\log P + C \cdot W)$ collapses into a manageable constant factor.
 
 Therefore, the effective time complexity of the algorithm is \textbf{linear, $O(G)$}, with respect to the season length.
